@@ -66,7 +66,6 @@ def add_note(api_key=None, oauth_token=None, incident_id=None, from_email=None, 
 			"content": note
 		}
 	}
-	print(f'incidents/{incident_id}/notes')
 	return request(
 		api_key=api_key,
 		oauth_token=oauth_token,
