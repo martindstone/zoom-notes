@@ -14,10 +14,10 @@ import pd
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-pd_key = os.environ.get('PD_KEY')
-from_email = os.environ.get('FROM_EMAIL')
-zoom_key = os.environ.get('ZOOM_KEY')
-zoom_secret = os.environ.get('ZOOM_SECRET')
+pd_key = os.environ.get('PD_KEY') or "Set your PD_KEY environment variable to a PD API token"
+from_email = os.environ.get('FROM_EMAIL') or "Set your FROM_EMAIL environment variable to the login email of a PD user"
+zoom_key = os.environ.get('ZOOM_KEY') or "Set your ZOOM_KEY environment variable to a Zoom REST API access key"
+zoom_secret = os.environ.get('ZOOM_SECRET') or "Set your ZOOM_SECRET environment variable to your Zoom REST API client secret"
 
 app = Flask(__name__)
 
@@ -60,3 +60,9 @@ def index():
 					r = pd.add_note(api_key=pd_key, incident_id=bridge["id"], from_email=from_email, note=note)
 
 	return "", 200
+
+@app.route("/start", methods=['POST'])
+def start_zoom():
+	req = DotMap(request.json)
+	incident_id = req.messages[0].incident.id
+	print(f'incident id is {incident_id}')
