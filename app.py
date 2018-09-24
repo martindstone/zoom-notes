@@ -67,6 +67,29 @@ def index():
 def start_zoom():
 	req = DotMap(request.json)
 	incident_id = req.messages[0].incident.id
-	print(f'incident id is {incident_id}')
+	incident_title = req.messages[0].incident.title
+	incident_number = req.messages[0].incident.incident_number
+
+	topic = f'[{incident_number}] {incident_title}'
+
+	zoom_userid = "3KqPLOZiR-u6ItjCb2vaiQ"
+
+	url = f"https://api.zoom.us/v2/users/{zoom_userid}/meetings"
+
+	data = {
+		"type": 1,
+		"topic": topic
+	}
+	req = requests.Request(
+		method='POST',
+		url=url,
+		headers={"Authorization": f"Bearer {zoom_token()}"},
+		json=data
+	)
+
+	prepped = req.prepare()
+	response = requests.Session().send(prepped)
+	res = DotMap(response.json())
+	print(f'created meeting {res.join_url} for incident {topic}')
 
 	return "", 200
