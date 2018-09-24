@@ -4,11 +4,9 @@ import jwt
 import requests
 import re
 import os
-
 from flask import Flask, request, Response
 import json
 from dotmap import DotMap
-
 import pd
 
 import pprint
@@ -18,6 +16,7 @@ pd_key = os.environ.get('PD_KEY') or "Set your PD_KEY environment variable to a 
 from_email = os.environ.get('FROM_EMAIL') or "Set your FROM_EMAIL environment variable to the login email of a PD user"
 zoom_key = os.environ.get('ZOOM_KEY') or "Set your ZOOM_KEY environment variable to a Zoom REST API access key"
 zoom_secret = os.environ.get('ZOOM_SECRET') or "Set your ZOOM_SECRET environment variable to your Zoom REST API client secret"
+zoom_userid = os.environ.get('ZOOM_USERID') or "Set your ZOOM_USERID environment variable to your Zoom REST User ID"
 
 app = Flask(__name__)
 
@@ -45,7 +44,6 @@ def index():
 
 		user_email = response.json().get("email");
 		note = f'{user_name} ({user_email}) {action} Zoom meeting {meeting_id} ({meeting_topic})'
-		print(note)
 		incidents = pd.fetch(api_key=pd_key, endpoint="incidents", params={"statuses[]": ["triggered", "acknowledged"], "include[]": ["metadata"]})
 		conf_bridges = [{"id": incident.get("id"), "metadata": incident.get("metadata")} for incident in incidents if incident.get("metadata")]
 
@@ -65,21 +63,16 @@ def index():
 
 @app.route("/start", methods=['POST'])
 def start_zoom():
-	print(f'=== WEBHOOK ===\n{request.json}\n===============')
 	req = DotMap(request.json)
 	incident_id = req.messages[0].incident.id
 	incident_title = req.messages[0].incident.title
 	incident_number = req.messages[0].incident.incident_number
 	requester_id = req.messages[0].log_entries[0].agent.id
 	requester_name = req.messages[0].log_entries[0].agent.summary
+	url = f"https://api.zoom.us/v2/users/{zoom_userid}/meetings"
 
 	topic = f'[{incident_number}] {incident_title}'
-
 	print(f'start zoom requested on {topic} by {requester_id} ({requester_name})')
-
-	zoom_userid = "3KqPLOZiR-u6ItjCb2vaiQ"
-
-	url = f"https://api.zoom.us/v2/users/{zoom_userid}/meetings"
 
 	data = {
 		"type": 1,
@@ -97,20 +90,6 @@ def start_zoom():
 	res = DotMap(response.json())
 	join_url = res.join_url
 	print(f'created meeting {join_url} for incident {topic}')
-
-# {
-#     "requester_id": "P7J8E4T",
-#     "incidents": [
-#     {
-#         "id": "P8VMU8A",
-#         "type": "incident_reference",
-#         "metadata":
-#         {
-#             "conference_url": "https://www.gotomeet.me/pdt-martin",
-#             "conference_number": "3478662513,,,2345678#"
-#         }
-#     }]
-# }
 	add_conf = {
 		"requester_id": requester_id,
 		"incidents": [
@@ -123,7 +102,6 @@ def start_zoom():
 			}
 		]
 	}
-	response = pd.request(api_key=pd_key, endpoint="/incidents", method="PUT", data=add_conf, addheaders={"From": "martin+pdrules@pagerduty.com"})
-	pp.pprint(response)
+	response = pd.request(api_key=pd_key, endpoint="/incidents", method="PUT", data=add_conf, addheaders={"From": from_email})
 
 	return "", 200
