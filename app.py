@@ -21,6 +21,11 @@ zoom_secret = os.environ.get('ZOOM_SECRET') or "Set your ZOOM_SECRET environment
 
 app = Flask(__name__)
 
+def zoom_token():
+		zoom_jwt_payload = { 'iss': zoom_key, 'exp': calendar.timegm(time.gmtime()) + 36000 }
+		zoom_token = jwt.encode(zoom_jwt_payload, zoom_secret)
+		return zoom_token.decode("utf-8")
+
 @app.route("/", methods=['POST'])
 def index():
 	req = DotMap(request.json)
@@ -32,12 +37,9 @@ def index():
 		user_name = req.payload.meeting.participant.user_name
 		user_id = req.payload.meeting.participant.user_id
 
-		zoom_jwt_payload = { 'iss': zoom_key, 'exp': calendar.timegm(time.gmtime()) + 36000 }
-		zoom_token = jwt.encode(zoom_jwt_payload, zoom_secret)
-		zoom_token = zoom_token.decode("utf-8")
 		zoom_req = requests.Request(method="get", 
 			url=f"https://api.zoom.us/v2/users/{user_id}", 
-			headers={"Authorization": f"Bearer {zoom_token}"})
+			headers={"Authorization": f"Bearer {zoom_token()}"})
 		prepped = zoom_req.prepare()
 		response = requests.Session().send(prepped)
 
@@ -66,3 +68,5 @@ def start_zoom():
 	req = DotMap(request.json)
 	incident_id = req.messages[0].incident.id
 	print(f'incident id is {incident_id}')
+
+	return "", 200
