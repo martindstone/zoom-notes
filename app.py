@@ -124,5 +124,6 @@ def start_zoom():
 		]
 	}
 	response = pd.request(api_key=pd_key, endpoint="/incidents", method="PUT", data=add_conf)
+	pp.pprint(response)
 
 	return "", 200
