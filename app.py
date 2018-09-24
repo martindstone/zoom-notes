@@ -70,8 +70,12 @@ def start_zoom():
 	incident_id = req.messages[0].incident.id
 	incident_title = req.messages[0].incident.title
 	incident_number = req.messages[0].incident.incident_number
+	requester_id = req.messages[0].log_entries[0].agent.id
+	requester_name = req.messages[0].log_entries[0].agent.summary
 
 	topic = f'[{incident_number}] {incident_title}'
+
+	print(f'start zoom requested on {topic} by {requester_id} ({requester_name})')
 
 	zoom_userid = "3KqPLOZiR-u6ItjCb2vaiQ"
 
@@ -91,6 +95,34 @@ def start_zoom():
 	prepped = req.prepare()
 	response = requests.Session().send(prepped)
 	res = DotMap(response.json())
-	print(f'created meeting {res.join_url} for incident {topic}')
+	join_url = res.join_url
+	print(f'created meeting {join_url} for incident {topic}')
+
+# {
+#     "requester_id": "P7J8E4T",
+#     "incidents": [
+#     {
+#         "id": "P8VMU8A",
+#         "type": "incident_reference",
+#         "metadata":
+#         {
+#             "conference_url": "https://www.gotomeet.me/pdt-martin",
+#             "conference_number": "3478662513,,,2345678#"
+#         }
+#     }]
+# }
+	add_conf = {
+		"requester_id": requester_id,
+		"incidents": [
+			{
+				"id": incident_id,
+				"type": "incident_reference",
+				"metadata":  {
+					"conference_url": join_url
+				}
+			}
+		]
+	}
+	response = pd.request(api_key=pd_key, endpoint="/incidents", method="PUT", data=add_conf)
 
 	return "", 200
