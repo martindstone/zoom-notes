@@ -65,6 +65,7 @@ def index():
 
 @app.route("/start", methods=['POST'])
 def start_zoom():
+	print(f'=== WEBHOOK ===\n{request.json}\n===============')
 	req = DotMap(request.json)
 	incident_id = req.messages[0].incident.id
 	incident_title = req.messages[0].incident.title
