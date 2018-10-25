@@ -9,11 +9,11 @@ To install, first you will need to get Zoom developer access. Log in at develope
 
 Now you will need to deploy this app to Heroku (`heroku create`) and set the following config variables:
 
-*FROM_EMAIL*: the login email of the PagerDuty user that will be seen as posting the timeline entries on PD incidents
-*PD_KEY*: A read/write v2 PagerDuty API key (in PagerDuty, go to Configuration > API Access > Create New API Key)
-*ZOOM_KEY*: Zoom developer credentials: "API Key"
-*ZOOM_SECRET*: Zoom developer credentials: "API Secret"
-*ZOOM_USERID*: Your Zoom user ID, looks like "3KsPLORiZ-u6ItjCb2vaiQ"
+**FROM_EMAIL**: the login email of the PagerDuty user that will be seen as posting the timeline entries on PD incidents
+**PD_KEY**: A read/write v2 PagerDuty API key (in PagerDuty, go to Configuration > API Access > Create New API Key)
+**ZOOM_KEY**: Zoom developer credentials: "API Key"
+**ZOOM_SECRET**: Zoom developer credentials: "API Secret"
+**ZOOM_USERID**: Your Zoom user ID, looks like "3KsPLORiZ-u6ItjCb2vaiQ"
 
 Sadly, it's not that easy to find your Zoom user ID, so I have written a script to list Zoom users with their ID's. To use it, set your ZOOM_KEY and ZOOM_SECRET first, like:
 
