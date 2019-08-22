@@ -28,14 +28,15 @@ def zoom_token():
 @app.route("/", methods=['POST'])
 def index():
 	req = DotMap(request.json)
-	if req.event == 'participant_joined' or req.event == 'participant_left':
+	if req.event == 'meeting.participant_joined' or req.event == 'meeting.participant_left' or req.event == 'meeting.started' or req.event == 'meeting.ended':
 
-		meeting_id = req.payload.meeting.id
-		meeting_topic = req.payload.meeting.topic
-		action = req.event.split('_')[1]
-		user_name = req.payload.meeting.participant.user_name
-		user_id = req.payload.meeting.participant.user_id
-
+		meeting_id = req.payload.object.id
+		meeting_topic = req.payload.object.topic
+		action = req.event.split('.')[1]
+		if "_" in action:
+			action = action.split('_')[1]
+		user_name = req.payload.object.participant.user_name
+		user_id = req.payload.object.participant.user_id
 		zoom_req = requests.Request(method="get", 
 			url=f"https://api.zoom.us/v2/users/{user_id}", 
 			headers={"Authorization": f"Bearer {zoom_token()}"})
@@ -43,21 +44,26 @@ def index():
 		response = requests.Session().send(prepped)
 
 		user_email = response.json().get("email");
-		note = f'{user_name} ({user_email}) {action} Zoom meeting {meeting_id} ({meeting_topic})'
+		if action == 'started' or action == 'ended':
+			note = f'Zoom meeting {meeting_id} ({meeting_topic}) {action}'
+		else:
+			note = f'{user_name} ({user_email}) {action} Zoom meeting {meeting_id} ({meeting_topic})'
+
 		incidents = pd.fetch(api_key=pd_key, endpoint="incidents", params={"statuses[]": ["triggered", "acknowledged"], "include[]": ["metadata"]})
 		conf_bridges = [{"id": incident.get("id"), "metadata": incident.get("metadata")} for incident in incidents if incident.get("metadata")]
 
 		for bridge in conf_bridges:
 			if bridge["metadata"].get("conference_number"):
-				conf = int(re.findall("[\d]+", bridge["metadata"]["conference_number"].replace('-', ''))[-1])
+				conf = re.findall("[\d]+", bridge["metadata"]["conference_number"].replace('-', ''))[-1]
 				if (meeting_id == conf):
 					print(f'I should put this note on incident {bridge["id"]} because conference number is {bridge["metadata"]["conference_number"]}')
 					r = pd.add_note(api_key=pd_key, incident_id=bridge["id"], from_email=from_email, note=note)
 			elif bridge["metadata"].get("conference_url"):
-				conf = int(re.findall("[\d]+", bridge["metadata"]["conference_url"].replace('-', ''))[-1])
+				conf = re.findall("[\d]+", bridge["metadata"]["conference_url"].replace('-', ''))[-1]
 				if (meeting_id == conf):
 					print(f'I should put this note on incident {bridge["id"]} because conference url is {bridge["metadata"]["conference_url"]}')
 					r = pd.add_note(api_key=pd_key, incident_id=bridge["id"], from_email=from_email, note=note)
+
 
 	return "", 200
 
